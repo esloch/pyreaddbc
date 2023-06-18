@@ -1,13 +1,17 @@
 default_language_version:
-  python: python3.9
+  python: python3.11
 
 default_stages: [commit, push]
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.5.0
+    rev: v4.0.1
     hooks:
       - id: end-of-file-fixer
+      - id: trailing-whitespace
+      # - id: check-yaml
+      - id: debug-statements
+        python: python3.11  # Specify a compatible Python version available in your environment
         exclude: LICENSE
 
   - repo: local

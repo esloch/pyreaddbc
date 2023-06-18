@@ -3,7 +3,7 @@ name: Python package
 on: [push]
 
 jobs:
-  build:
+  build-linux:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
@@ -12,14 +12,14 @@ jobs:
     concurrency:
       group: ci-${{ github.ref }}
       cancel-in-progress: true
-    
+
     defaults:
       run:
         shell: bash -l {0}
 
     steps:
     - uses: actions/checkout@v2
-    
+
     - uses: conda-incubator/setup-miniconda@v2
       with:
         miniconda-version: "latest"
@@ -29,10 +29,10 @@ jobs:
         activate-environment: pyreaddbc
         use-mamba: true
         miniforge-variant: Mambaforge
-    
+
     - name: Install dependencies
       run: |
-        poetry config experimental.new-installer false
+        # poetry config experimental.new-installer false
         poetry config virtualenvs.create false
         poetry build
         poetry install
@@ -47,3 +47,44 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run pytest -vv tests/
+
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9"]
+
+    defaults:
+      run:
+        shell: powershell -Command {0}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Poetry
+      run: |
+        (Invoke-WebRequest -Uri https://install.python-poetry.org/ -UseBasicParsing).Content | python
+
+    - name: Install dependencies
+      run: |
+        # python -m poetry config experimental.new-installer false
+        python -m poetry config virtualenvs.create false
+        python -m poetry build
+        python -m poetry install
+
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        python -m flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Test with pytest
+      run: |
+        python -m pytest -vv tests/
